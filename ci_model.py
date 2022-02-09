@@ -131,6 +131,9 @@ def run_cuppini(simLength, pos_a, pos_v, N=180, Ea=28, Ev=27, noise=True):
     return Y_a, Y_v, Y_m
 
 
+######################################################################################################
+
+
 def run_dfi(
     simLength,
     soa,
@@ -167,7 +170,7 @@ def run_dfi(
             (
                 np.tile(np.zeros(N), (onset, 1)),
                 np.tile(ev, (flash_duration, 1)),
-                np.tile(np.zeros(N), (simLength - onset - flash_duration, 1))
+                np.tile(np.zeros(N), (simLength - onset - flash_duration, 1)),
             )
         ),
         1 / dt,
@@ -181,7 +184,7 @@ def run_dfi(
                 np.tile(ea, (beep_duration, 1)),
                 np.tile(np.zeros(N), (soa, 1)),
                 np.tile(ea, (beep_duration, 1)),
-                np.tile(np.zeros(N), (simLength - onset - beep_duration * 2 - soa, 1))
+                np.tile(np.zeros(N), (simLength - onset - beep_duration * 2 - soa, 1)),
             )
         ),
         1 / dt,
@@ -232,6 +235,115 @@ def run_dfi(
 
     return res_auditory, res_visual, res_multisensory
 
+
+############################################################################################
+
+# TODO inclue feedback synapses and explore the model behaviour
+
+
+def run_dfi_feedback(
+    simLength,
+    soa,
+    N=180,
+    Ea=28,
+    Ev=27,
+    noise=False,
+    onset=16,
+    dt=0.01,
+    pos_a=90,
+    pos_v=90,
+):
+
+    hist_times = np.arange(0, simLength, dt)
+
+    # Synapses - TODO put it outside
+    La = calculate_L(N, L_ex=5, L_in=4, sigma_ex=3, sigma_in=120)
+    Lv = calculate_L(N, L_ex=5, L_in=4, sigma_ex=3, sigma_in=120)
+    Lm = calculate_L(N, L_ex=3, L_in=2.6, sigma_ex=2, sigma_in=10)
+    Wa = calculate_W(N, W0=1.4, sigma=5)
+    Wv = calculate_W(N, W0=1.4, sigma=5)
+    Wma = calculate_W(N, W0=18, sigma=0.5)
+    Wmv = calculate_W(N, W0=18, sigma=0.5)
+
+    # Stim - TODO maybe create a function for this
+    beep_duration = 7  # ms
+    flash_duration = 12  # ms
+
+    ea = stimuli_input(N, E=Ea, sigma=32, pos=pos_a)
+    ev = stimuli_input(N, E=Ev, sigma=4, pos=pos_v)
+
+    Iv = np.repeat(
+        np.vstack(
+            (
+                np.tile(np.zeros(N), (onset, 1)),
+                np.tile(ev, (flash_duration, 1)),
+                np.tile(np.zeros(N), (simLength - onset - flash_duration, 1)),
+            )
+        ),
+        1 / dt,
+        axis=0,
+    )
+
+    Ia = np.repeat(
+        np.vstack(
+            (
+                np.tile(np.zeros(N), (onset, 1)),
+                np.tile(ea, (beep_duration, 1)),
+                np.tile(np.zeros(N), (soa, 1)),
+                np.tile(ea, (beep_duration, 1)),
+                np.tile(np.zeros(N), (simLength - onset - beep_duration * 2 - soa, 1)),
+            )
+        ),
+        1 / dt,
+        axis=0,
+    )
+
+    # Holders
+    Y_a, Y_v, Y_m = np.zeros(N), np.zeros(N), np.zeros(N)
+    res_auditory, res_visual, res_multisensory = (
+        np.zeros((N, int(simLength / dt))),
+        np.zeros((N, int(simLength / dt))),
+        np.zeros((N, int(simLength / dt))),
+    )
+
+    for i in range(hist_times.size):
+        t = hist_times[i]
+
+        # Compute cross-modal input
+        ca = np.sum(Wa * Y_a, axis=1)
+        cv = np.sum(Wv * Y_v, axis=1)
+
+        # Compute external input
+        ia = Ia[i] + ca
+        iv = Iv[i] + cv
+        im = np.sum(Wma * Y_a, axis=1) + np.sum(Wmv * Y_v, axis=1)
+
+        if noise == True:
+            noise_a = -(Ea * 0.4) + (2 * Ea * 0.4) * np.random.rand(N)
+            noise_v = -(Ev * 0.4) + (2 * Ev * 0.4) * np.random.rand(N)
+            ia += noise_a
+            iv += noise_v
+
+        # Compute lateral inpunt
+        la = np.sum(La * Y_a, axis=1)
+        lv = np.sum(Lv * Y_v, axis=1)
+        lm = np.sum(Lm * Y_m, axis=1)
+
+        # Compute unisensory total input
+        U_a = la + ia
+        U_v = lv + iv
+
+        # Compute multisensory total input
+        U_m = lm + im
+
+        # Compute neurons activity
+        Y_a, Y_v, Y_m = cuppini_model(Y_a, Y_v, Y_m, t, U_a, U_v, U_m)
+        res_auditory[:, i], res_visual[:, i], res_multisensory[:, i] = Y_a, Y_v, Y_m
+
+    return res_auditory, res_visual, res_multisensory
+
+
+#########################################################################################################
 
 ## Plotting
 
