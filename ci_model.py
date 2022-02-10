@@ -145,13 +145,15 @@ def run_dfi(
     dt=0.01,
     pos_a=90,
     pos_v=90,
+    L_ex=5,
+    L_in=4,
 ):
 
     hist_times = np.arange(0, simLength, dt)
 
     # Synapses - TODO put it outside
-    La = calculate_L(N, L_ex=5, L_in=4, sigma_ex=3, sigma_in=120)
-    Lv = calculate_L(N, L_ex=5, L_in=4, sigma_ex=3, sigma_in=120)
+    La = calculate_L(N, L_ex=L_ex, L_in=L_in, sigma_ex=3, sigma_in=120)
+    Lv = calculate_L(N, L_ex=L_ex, L_in=L_in, sigma_ex=3, sigma_in=120)
     Lm = calculate_L(N, L_ex=3, L_in=2.6, sigma_ex=2, sigma_in=10)
     Wa = calculate_W(N, W0=1.4, sigma=5)
     Wv = calculate_W(N, W0=1.4, sigma=5)
@@ -252,18 +254,25 @@ def run_dfi_feedback(
     dt=0.01,
     pos_a=90,
     pos_v=90,
+    L_ex=5,
+    L_in=4,
 ):
 
     hist_times = np.arange(0, simLength, dt)
 
     # Synapses - TODO put it outside
-    La = calculate_L(N, L_ex=5, L_in=4, sigma_ex=3, sigma_in=120)
-    Lv = calculate_L(N, L_ex=5, L_in=4, sigma_ex=3, sigma_in=120)
+    La = calculate_L(N, L_ex=L_ex, L_in=L_in, sigma_ex=3, sigma_in=120)
+    Lv = calculate_L(N, L_ex=L_ex, L_in=L_in, sigma_ex=3, sigma_in=120)
     Lm = calculate_L(N, L_ex=3, L_in=2.6, sigma_ex=2, sigma_in=10)
     Wa = calculate_W(N, W0=1.4, sigma=5)
     Wv = calculate_W(N, W0=1.4, sigma=5)
-    Wma = calculate_W(N, W0=18, sigma=0.5)
-    Wmv = calculate_W(N, W0=18, sigma=0.5)
+    Wma = calculate_W(N, W0=22.5, sigma=0.5)
+    Wmv = calculate_W(N, W0=22.5, sigma=0.5)
+
+    Wam = calculate_W(
+        N, W0=13.5, sigma=0.5
+    )  # TODO check values of W0. 22.5 / Original: 18
+    Wvm = calculate_W(N, W0=13.5, sigma=0.5)
 
     # Stim - TODO maybe create a function for this
     beep_duration = 7  # ms
@@ -313,9 +322,13 @@ def run_dfi_feedback(
         ca = np.sum(Wa * Y_a, axis=1)
         cv = np.sum(Wv * Y_v, axis=1)
 
+        # Compute feedback input
+        fa = np.sum(Wam * Y_m, axis=1)
+        fv = np.sum(Wvm * Y_m, axis=1)
+
         # Compute external input
-        ia = Ia[i] + ca
-        iv = Iv[i] + cv
+        ia = Ia[i] + ca + fa
+        iv = Iv[i] + cv + fv
         im = np.sum(Wma * Y_a, axis=1) + np.sum(Wmv * Y_v, axis=1)
 
         if noise == True:
