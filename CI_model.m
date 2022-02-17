@@ -10,8 +10,8 @@
 
 clear, close all, clc
 
-s = RandStream.create('mt19937ar','seed',sum(100*clock));
-RandStream.setGlobalStream(s);
+%s = RandStream.create('mt19937ar','seed',sum(100*clock));
+%RandStream.setGlobalStream(s);
 
 %% Model's parameters
 

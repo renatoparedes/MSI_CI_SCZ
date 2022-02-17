@@ -99,8 +99,8 @@ def run_cuppini(simLength, pos_a, pos_v, N=180, Ea=28, Ev=27, noise=True):
         t = hist_times[i]
 
         # Compute cross-modal input
-        ca = np.sum(Wa * Y_a, axis=1)
-        cv = np.sum(Wv * Y_v, axis=1)
+        cv = np.sum(Wa * Y_a, axis=1)
+        ca = np.sum(Wv * Y_v, axis=1)
 
         # Compute external input
         ia = ea + ca
@@ -205,8 +205,8 @@ def run_dfi(
         t = hist_times[i]
 
         # Compute cross-modal input
-        ca = np.sum(Wa * Y_a, axis=1)
-        cv = np.sum(Wv * Y_v, axis=1)
+        cv = np.sum(Wa * Y_a, axis=1)
+        ca = np.sum(Wv * Y_v, axis=1)
 
         # Compute external input
         ia = Ia[i] + ca
@@ -319,8 +319,8 @@ def run_dfi_feedback(
         t = hist_times[i]
 
         # Compute cross-modal input
-        ca = np.sum(Wa * Y_a, axis=1)
-        cv = np.sum(Wv * Y_v, axis=1)
+        cv = np.sum(Wa * Y_a, axis=1)
+        ca = np.sum(Wv * Y_v, axis=1)
 
         # Compute feedback input
         fa = np.sum(Wam * Y_m, axis=1)
